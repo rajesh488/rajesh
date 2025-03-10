@@ -1,152 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Gemini Image Explanation</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        #image-container {
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
-        }
-
-        #image-preview {
-            max-width: 400px;
-            max-height: 300px;
-            display: block;
-            margin: 0 auto;
-        }
-
-        #explanation {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            width: 80%;
-            text-align: left;
-        }
-
-        #error-message {
-            color: red;
-            margin-top: 10px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Leaf Identifier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Gemini Image Explanation</h1>
 
-    <div id="image-container">
-        <input type="file" id="image-input" accept="image/*">
-        <img id="image-preview" src="#" alt="Image Preview" style="display: none;">
+<body class="bg-green-50 flex h-screen items-center justify-center">
+    <div class="bg-white shadow-xl rounded-2xl w-full max-w-4xl grid grid-cols-2">
+        <!-- Image Upload & Scanner Side -->
+        <div class="p-8 flex flex-col items-center justify-center border-r">
+            <h1 class="text-2xl font-bold text-green-600 mb-4">Plant Leaf Scanner</h1>
+            <input type="file" id="imageInput" accept="image/*" class="hidden">
+            <label for="imageInput" class="cursor-pointer bg-green-500 text-white py-2 px-6 rounded-xl shadow-md hover:bg-green-600 transition">Upload Image</label>
+            <div class="my-4 text-gray-500">OR</div>
+            <button id="scanButton" class="bg-green-500 text-white py-2 px-6 rounded-xl shadow-md hover:bg-green-600 transition animate-pulse">
+                Scan with Camera
+            </button>
+            <video id="cameraPreview" class="hidden mt-4 w-full rounded-xl" autoplay></video>
+        </div>
+        
+        <!-- Information Display Side -->
+        <div class="p-8 flex flex-col">
+            <h2 class="text-xl font-bold text-green-600">Plant Information</h2>
+            <div id="infoDisplay" class="mt-4 text-gray-700">
+                <p><strong>Name:</strong> -</p>
+                <p><strong>Scientific Name:</strong> -</p>
+                <p><strong>Uses:</strong> -</p>
+                <p><strong>Benefits:</strong> -</p>
+            </div>
+        </div>
     </div>
-
-    <button id="explain-button" disabled>Explain Image</button>
-
-    <div id="explanation">
-        <h2>Explanation:</h2>
-        <p id="explanation-text">Waiting for image and explanation...</p>
-    </div>
-
-    <div id="error-message"></div>
 
     <script>
-        const imageInput = document.getElementById('image-input');
-        const imagePreview = document.getElementById('image-preview');
-        const explainButton = document.getElementById('explain-button');
-        const explanationText = document.getElementById('explanation-text');
-        const errorMessage = document.getElementById('error-message');
 
-        const API_KEY = ""; // Replace with your actual API key
-
-        let base64Image = null;  // Store the base64 encoded image
-
-        imageInput.addEventListener('change', function(event) {
+        document.getElementById('imageInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
-
             if (file) {
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
-                    base64Image = e.target.result.split(',')[1]; // Extract base64 data
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                    explainButton.disabled = false;
-                    errorMessage.textContent = ""; // Clear any previous errors
-                }
-
-                reader.readAsDataURL(file);
-            } else {
-                base64Image = null;
-                imagePreview.src = '#';
-                imagePreview.style.display = 'none';
-                explainButton.disabled = true;
-                explanationText.textContent = "Waiting for image and explanation...";
+                document.getElementById('infoDisplay').innerHTML = `<p>Processing image...</p>`;
+                // Backend API call logic will be integrated here
+                
             }
         });
 
-        explainButton.addEventListener('click', function() {
-            if (!base64Image) {
-                errorMessage.textContent = "Please select an image first.";
-                return;
-            }
+        document.getElementById('scanButton').addEventListener('click', async function() {
+            const video = document.getElementById('cameraPreview');
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            video.classList.remove('hidden');
 
-            explanationText.textContent = "Loading explanation...";  // Show loading message
-            errorMessage.textContent = "";
-
-            // Prepare the API request
-            const url = https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${API_KEY};
-            const headers = {
-                'Content-Type': 'application/json'
-            };
-            const data = JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: "Explain what you see in this image. Be detailed." },
-                        { inline_data: { mime_type: "image/jpeg", data: base64Image } }  // Adjust mime_type if necessary
-                    ]
-                }]
-            });
-
-            // Make the API call using fetch
-            fetch(url, {
-                method: 'POST',
-                headers: headers,
-                body: data
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(HTTP error! Status: ${response.status});
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("API Response:", data); // Log the full response for debugging
-
-                // Extract the explanation from the response.  Adjust this based on the API response structure!
-                try {
-                  const generatedText = data.candidates[0].content.parts[0].text;
-                  explanationText.textContent = generatedText;
-                } catch (error) {
-                  console.error("Error parsing response:", error);
-                  explanationText.textContent = "Error parsing the API response. Check the console for details.";
-                  errorMessage.textContent = "Failed to extract the explanation from the response. Check the console for errors.";
-
-                }
-            })
-            .catch(error => {
-                console.error("API Error:", error);
-                explanationText.textContent = "An error occurred while getting the explanation.";
-                errorMessage.textContent = API Error: ${error.message}.  Check the console for details.;
-            });
+            setTimeout(() => captureImage(video), 3000);
         });
 
+        function captureImage(video) {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('file', blob, 'captured-image.jpg');
+
+                fetch('http://localhost:5000/google-vision', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('infoDisplay').innerHTML = `
+                        <p><strong>Name:</strong> ${data.name}</p>
+                        <p><strong>Scientific Name:</strong> ${data.scientificName}</p>
+                        <p><strong>Uses:</strong> ${data.uses}</p>
+                        <p><strong>Benefits:</strong> ${data.benefits}</p>
+                        <p><strong>Other Details:</strong> ${data.details}</p>
+                    `;
+                })
+                .catch(() => {
+                    document.getElementById('infoDisplay').innerHTML = "<p>Error predicting plant. Please try again.</p>";
+                });
+            }, 'image/jpeg');
+        }
     </script>
 </body>
 </html>
+
+
+       
+       
+  
+ 
+
+
+          
