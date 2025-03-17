@@ -3,95 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plant Leaf Identifier</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>QR Code Scanner</title>
+    <link rel="stylesheet" href="scaan.css">
+    <script defer src="scaan.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
 </head>
+<body>
 
-<body class="bg-green-50 flex h-screen items-center justify-center">
-    <div class="bg-white shadow-xl rounded-2xl w-full max-w-4xl grid grid-cols-2">
-        <!-- Image Upload & Scanner Side -->
-        <div class="p-8 flex flex-col items-center justify-center border-r">
-            <h1 class="text-2xl font-bold text-green-600 mb-4">Plant Leaf Scanner</h1>
-            <input type="file" id="imageInput" accept="image/*" class="hidden">
-            <label for="imageInput" class="cursor-pointer bg-green-500 text-white py-2 px-6 rounded-xl shadow-md hover:bg-green-600 transition">Upload Image</label>
-            <div class="my-4 text-gray-500">OR</div>
-            <button id="scanButton" class="bg-green-500 text-white py-2 px-6 rounded-xl shadow-md hover:bg-green-600 transition animate-pulse">
-                Scan with Camera
-            </button>
-            <video id="cameraPreview" class="hidden mt-4 w-full rounded-xl" autoplay></video>
-        </div>
-        
-        <!-- Information Display Side -->
-        <div class="p-8 flex flex-col">
-            <h2 class="text-xl font-bold text-green-600">Plant Information</h2>
-            <div id="infoDisplay" class="mt-4 text-gray-700">
-                <p><strong>Name:</strong> -</p>
-                <p><strong>Scientific Name:</strong> -</p>
-                <p><strong>Uses:</strong> -</p>
-                <p><strong>Benefits:</strong> -</p>
+    <div class="reader-wrapper">
+        <form action="#">
+            <input type="file" hidden>
+            <img src="#" alt="qr-code">
+            <div class="content">
+                <i class="fas fa-cloud-upload"></i>
+                <p>Upload QR Code to Read</p>
             </div>
+        </form>
+    </div>
+
+    
+    <div class="popup-box">
+        <span class="close-btn">&times;</span>
+        <h2>QR Code Result</h2>
+        <div class="result-box">
+            <p class="qr-output"></p>
         </div>
     </div>
 
-    <script>
-
-        document.getElementById('imageInput').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                document.getElementById('infoDisplay').innerHTML = `<p>Processing image...</p>`;
-                // Backend API call logic will be integrated here
-                
-            }
-        });
-
-        document.getElementById('scanButton').addEventListener('click', async function() {
-            const video = document.getElementById('cameraPreview');
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-            video.classList.remove('hidden');
-
-            setTimeout(() => captureImage(video), 3000);
-        });
-
-        function captureImage(video) {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob(blob => {
-                const formData = new FormData();
-                formData.append('file', blob, 'captured-image.jpg');
-
-                fetch('http://localhost:5000/google-vision', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('infoDisplay').innerHTML = `
-                        <p><strong>Name:</strong> ${data.name}</p>
-                        <p><strong>Scientific Name:</strong> ${data.scientificName}</p>
-                        <p><strong>Uses:</strong> ${data.uses}</p>
-                        <p><strong>Benefits:</strong> ${data.benefits}</p>
-                        <p><strong>Other Details:</strong> ${data.details}</p>
-                    `;
-                })
-                .catch(() => {
-                    document.getElementById('infoDisplay').innerHTML = "<p>Error predicting plant. Please try again.</p>";
-                });
-            }, 'image/jpeg');
-        }
-    </script>
 </body>
 </html>
 
+css
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-       
-       
-  
- 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #E3F2FD;
+}
+
+.reader-wrapper {
+    width: 350px;
+    border-radius: 7px;
+    background: #8754ff;
+    padding: 20px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.reader-wrapper form {
+    height: 200px;
+    display: flex;
+    cursor: pointer;
+    text-align: center;
+    border-radius: 7px;
+    background: #fff;
+    align-items: center;
+    justify-content: center;
+}
+
+form img {
+    display: none;
+    max-width: 140px;
+}
+
+form .content i {
+    color: #8754ff;
+    font-size: 50px;
+}
+
+form .content p {
+    color: #8754ff;
+    margin-top: 12px;
+    font-size: 14px;
+}
 
 
-          
+.popup-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 500px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out, opacity 0.2s;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.popup-box.active {
+    transform: translate(-50%, -50%) scale(1);
+    visibility: visible;
+    opacity: 1;
+}
+
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    color: red;
+    transition: transform 0.3s ease, color 0.2s;
+}
+
+.close-btn:hover {
+    transform: rotate(180deg);
+    color: darkred;
+}
+
+.result-box {
+    width: 100%;
+    background: #f5f5f5;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+    text-align: left;
+    word-break: break-word;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+
+.highlight {
+    background: #27ae60;
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+
+.highlight {
+    background: #27ae60;
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.popup-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 500px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out, opacity 0.2s;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.popup-box.active {
+    transform: translate(-50%, -50%) scale(1);
+    visibility: visible;
+    opacity: 1;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    color: red;
+    transition: transform 0.3s ease, color 0.2s;
+}
+
+.close-btn:hover {
+    transform: rotate(180deg);
+    color: darkred;
+}
+
+
+.popup-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    width: 500px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: none;
+    text-align: left;
+}
+
+.popup-box.active {
+    display: block;
+}
+
+.qr-line {
+    margin-bottom: 10px;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.qr-text {
+    display: inline-block;
+    width: 100%;
+}
+
+.highlight {
+    background: green;
+    color: white;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+javascript
+
+const readerWrapper = document.querySelector(".reader-wrapper"),
+form = document.querySelector("form"),
+fileInp = form.querySelector("input"),
+infoText = form.querySelector("p"),
+popupBox = document.querySelector(".popup-box"),
+closeBtn = document.querySelector(".close-btn"),
+qrOutput = popupBox.querySelector(".qr-output");
+
+// List of specific terms to highlight
+const highlightTerms = ["Plant Name", "Scientific Name", "Uses", "Benefits", "Other Details"];
+
+function fetchRequest(file, formData) {
+infoText.innerText = "Scanning QR Code...";
+fetch("http://api.qrserver.com/v1/read-qr-code/", {
+    method: 'POST',
+    body: formData
+})
+.then(res => res.json())
+.then(result => {
+    let qrData = result[0].symbol[0].data;
+    infoText.innerText = qrData ? "Upload QR Code to Scan" : "Couldn't scan QR Code";
+    if (!qrData) return;
+
+    // Format output with separate green backgrounds for each term
+    qrData = qrData.split('\n').map(line => {
+        highlightTerms.forEach(term => {
+            let regex = new RegExp(`(${term}):`, "gi");
+            line = line.replace(regex, '<span class="highlight">$1:</span>');
+        });
+        return `<div class="qr-line"><span class="qr-text">${line}</span></div>`;
+    }).join('');
+
+    // Display formatted result
+    qrOutput.innerHTML = qrData;
+    popupBox.classList.add("active");
+})
+.catch(() => {
+    infoText.innerText = "Couldn't scan QR Code";
+});
+}
+
+// File input change event
+fileInp.addEventListener("change", async e => {
+let file = e.target.files[0];
+if (!file) return;
+let formData = new FormData();
+formData.append('file', file);
+fetchRequest(file, formData);
+});
+
+// Close pop-up and refresh QR code
+closeBtn.addEventListener("click", () => {
+popupBox.classList.remove("active");
+setTimeout(() => {
+    qrOutput.innerHTML = ""; // Clear QR text
+    fileInp.value = ""; // Reset file input
+}, 300);
+});
+
+// Click to upload file
+form.addEventListener("click", () => fileInp.click());
+
+// Close pop-up with animation and refresh QR code
+closeBtn.addEventListener("click", () => {
+    popupBox.style.transform = "scale(0.9)";
+    popupBox.style.opacity = "0";
+    setTimeout(() => {
+        popupBox.classList.remove("active");
+        popupBox.style.transform = "scale(1)";
+        popupBox.style.opacity = "1";
+        qrOutput.innerHTML = ""; // Clear QR text
+        fileInp.value = ""; // Reset file input
+    }, 300);
+});
+
+
